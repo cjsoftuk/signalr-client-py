@@ -7,7 +7,7 @@ from signalr.transports import AutoTransport
 
 
 class Connection:
-    protocol_version = '1.5'
+    protocol_version = '2.0'
 
     def __init__(self, url, session):
         self.url = url

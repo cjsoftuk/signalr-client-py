@@ -4,8 +4,12 @@ import sys
 import threading
 if sys.version_info[0] < 3:
     from urllib import quote_plus
+    import urlparse as parse
+    query_encode = parse.urlencode
 else:
     from urllib.parse import quote_plus
+    import urllib.parse as parse
+    query_encode = parse.urlencode
 
 
 
@@ -26,7 +30,23 @@ class Transport:
 
         negotiate.raise_for_status()
 
-        return negotiate.json()
+        data = negotiate.json()
+
+        if 'RedirectUrl' in data.keys() and 'AccessToken' in data.keys():
+            if "?" in self._connection.url:
+                qs = self._connection.url.split("?")[1]
+            else:
+                qs = ""
+            self._connection.url = data["RedirectUrl"]
+            self._connection.qs["access_token"] = data["AccessToken"]
+            self._connection.qs["transport"] = "webSockets"
+            self._session.headers.update({"Authorization": "Bearer " + data["AccessToken"]})
+
+            # And do it all over again!
+            return self.negotiate()
+
+
+        return data
 
     @abstractmethod
     def start(self):
